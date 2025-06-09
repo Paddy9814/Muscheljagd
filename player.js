@@ -41,6 +41,7 @@ socket.addEventListener('message', (event) => {
   const type = incoming[0];
 
   switch (type) {
+    /*
     case '*client-id*':
       clientId = incoming[1];
 
@@ -49,6 +50,27 @@ socket.addEventListener('message', (event) => {
       const colorIndex = hash % playerColors.length;
       playerColor = playerColors[colorIndex];
       break;
+      */
+     case '*client-id*':
+  clientId = incoming[1];
+
+  // Farbe anhand der Reihenfolge vergeben (1. Spieler = pink, 2. = schwarz, ...)
+  // ACHTUNG: clientCount wird erst kurz danach empfangen, daher kleinen Workaround:
+  socket.send(JSON.stringify(['*whoami*'])); // Triggert serverseitig keine Antwort, aber clientCount wird hoffentlich bald aktualisiert
+  break;
+
+case '*client-count*':
+  clientCount = incoming[1];
+
+  // Spielerfarbe zuweisen, aber nur wenn clientId bereits gesetzt wurde:
+  if (clientId && clientCount <= playerColors.length) {
+    playerColor = playerColors[clientCount - 1];
+  }
+
+  updateCounters();
+  break;
+
+
     case '*client-count*':
       clientCount = incoming[1];
       updateCounters();
