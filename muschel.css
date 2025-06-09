@@ -1,0 +1,64 @@
+html {
+    overscroll-behavior: none;
+  }
+  
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+  font-family: 'Futura', 'Segoe UI', sans-serif;
+  background-color: #a0f0e0;
+  color: #333;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 100vh;
+  padding: 1em 0 2em 0; /* oben, rechts, unten, links */
+  } 
+  
+  #canvas {
+    background-color: #f4e3c1; /* Sandfarbe für den Strand (Canvas) */
+    border: 3px solid #ffffff;
+    image-rendering: pixelated;
+    cursor: pointer;
+    margin-top: 1em;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+  }
+  
+  .controls {
+    margin-top: 20px;
+  }
+  
+  #info-display {
+  margin-top: 20px;
+  font-size: 1.2em;
+  font-family: 'Futura', 'Segoe UI', sans-serif;
+  color: #333;
+  text-align: center;
+}
+
+#info-display span {
+  margin: 0 0.5em;
+}
+  
+  #clear-btn {
+  font-family: 'Futura', 'Segoe UI', sans-serif;
+  background-color: pink;
+  color: #333;
+  border: none;
+  padding: 10px 20px;
+  font-size: 1rem;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+#clear-btn:hover {
+  background-color: #ffb6c1;
+  transform: scale(1.05);
+}
