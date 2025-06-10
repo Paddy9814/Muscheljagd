@@ -99,6 +99,7 @@ case '*client-count*':
    /* if (clientId && clientCount <= playerColors.length) {
     playerColor = playerColors[clientCount - 1];
   } */
+  
   // Spielerfarbe zuweisen, aber nur wenn clientId bereits gesetzt wurde:
  if (clientId) {
   playerColor = playerColors[(clientCount - 1) % playerColors.length];
@@ -107,7 +108,7 @@ case '*client-count*':
   updateCounters();
   break;
 
-
+/*
     case '*client-count*':
       clientCount = incoming[1];
       updateCounters();
