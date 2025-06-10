@@ -41,17 +41,8 @@ socket.addEventListener('message', (event) => {
   const type = incoming[0];
 
   switch (type) {
-    /*
-    case '*client-id*':
-      clientId = incoming[1];
-
-      // Einfach aus der clientId eine Zahl extrahieren, um eine Farbe zu bestimmen
-      const hash = [...clientId].reduce((acc, char) => acc + char.charCodeAt(0), 0);
-      const colorIndex = hash % playerColors.length;
-      playerColor = playerColors[colorIndex];
-      break;
-      */
-     case '*client-id*':
+    
+  case '*client-id*':
   clientId = incoming[1];
 
   // Farbe anhand der Reihenfolge vergeben (1. Spieler = pink, 2. = schwarz, ...)
@@ -62,6 +53,9 @@ socket.addEventListener('message', (event) => {
 case '*client-count*':
   clientCount = incoming[1];
 
+    if (clientId && clientCount <= playerColors.length) {
+    playerColor = playerColors[clientCount - 1];
+  }
   // Spielerfarbe zuweisen, aber nur wenn clientId bereits gesetzt wurde:
  if (clientId) {
   playerColor = playerColors[(clientCount - 1) % playerColors.length];
