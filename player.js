@@ -107,6 +107,7 @@ case '*client-count*':
 
   updateCounters();
   break;
+  }
 
 /*
     case '*client-count*':
