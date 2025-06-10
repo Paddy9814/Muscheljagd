@@ -14,8 +14,8 @@ const socket = new WebSocket(webSocketServer);
 let shellCount = 0;
 
 let clientId = null;
-const playerColors = ['pink', 'black', 'lightblue', 'darkblue', 'white'];
-let playerColor = 'pink'; // Standard, falls etwas schiefläuft
+//const playerColors = ['pink', 'black', 'lightblue', 'darkblue', 'white'];
+//let playerColor = 'pink'; // Standard, falls etwas schiefläuft
 let clientCount = 0;
 
 function updateCounters() {
@@ -39,7 +39,50 @@ socket.addEventListener('message', (event) => {
   if (!event.data) return;
   const incoming = JSON.parse(event.data);
   const type = incoming[0];
+  function generateRandomColor() {
+  return `#${Math.floor(Math.random()*16777215).toString(16)}`;
+}
 
+const clientColorMap = {}; // Map zur Speicherung der Farben für jeden Client
+let playerColor = 'pink'; // Standardfarbe für den Fall von Fehlern
+
+socket.addEventListener('message', (event) => {
+  if (!event.data) return;
+  const incoming = JSON.parse(event.data);
+  const type = incoming[0];
+
+  switch (type) {
+    case '*client-id*':
+      clientId = incoming[1];
+
+      // Falls dieser Client bereits eine Farbe hat, nutze sie
+      if (clientColorMap[clientId]) {
+        playerColor = clientColorMap[clientId];
+      } else {
+        // Neue zufällige Farbe generieren und speichern
+        playerColor = generateRandomColor();
+        clientColorMap[clientId] = playerColor;
+      }
+
+      socket.send(JSON.stringify(['*whoami*'])); // Triggert Aktualisierung
+      break;
+
+    case '*client-count*':
+      clientCount = incoming[1];
+      updateCounters();
+      break;
+
+    case 'draw-shell':
+      const [_, drawX, drawY, color] = incoming;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.roundRect(drawX, drawY, 10, 10, 5);
+      ctx.fill();
+      break;
+  }
+});
+
+  /*
   switch (type) {
     
   case '*client-id*':
@@ -77,6 +120,7 @@ case '*client-count*':
       ctx.fill();
       // Wichtig: kein shellCount++ hier!
       break;
+      */
     case '*error*':
       console.warn('Server-Fehler:', ...incoming[1]);
       break;
