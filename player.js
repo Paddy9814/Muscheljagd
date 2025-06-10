@@ -16,7 +16,7 @@ let clientId = null;
 let clientCount = 0;
 
 // Feste Farben für Spieler – maximal 5 verschiedene
-const playerColors = ['pink', 'black', 'lightblue', 'darkblue', 'white'];
+const playerColors = ['pink', 'black', 'lightblue', 'darkblue', 'white', 'violet', 'indigo', 'lightgray', 'darkgray', 'peachpuff'];
 let playerColor = null;
 
 function updateCounters() {
