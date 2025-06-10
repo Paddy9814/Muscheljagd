@@ -33,7 +33,7 @@ socket.addEventListener('open', () => {
   socket.send(JSON.stringify(['*subscribe-client-count*']));
   setInterval(() => socket.send(''), 30000); // Verbindung aktiv halten
 });
-
+/*
 // Nachrichten vom Server verarbeiten
 socket.addEventListener('message', (event) => {
   if (!event.data) return;
@@ -41,7 +41,7 @@ socket.addEventListener('message', (event) => {
   const type = incoming[0];
   function generateRandomColor() {
   return `#${Math.floor(Math.random()*16777215).toString(16)}`;
-}
+} */
 
 const clientColorMap = {}; // Map zur Speicherung der Farben für jeden Client
 let playerColor = 'pink'; // Standardfarbe für den Fall von Fehlern
