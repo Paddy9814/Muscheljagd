@@ -43,18 +43,18 @@ socket.addEventListener('message', (event) => {
 
   switch (type) {
     case '*client-id*':
-  clientId = incoming[1];
-
-  // Farbe eindeutig und konsistent aus clientId erzeugen
-  const hash = Array.from(clientId).reduce((sum, char) => sum + char.charCodeAt(0), 0);
-  const colorIndex = hash % playerColors.length;
-  playerColor = playerColors[colorIndex];
-  break;
-
+      clientId = incoming[1];
+      break;
 
     case '*client-count*':
       clientCount = incoming[1];
       updateCounters();
+
+      // Spielerfarbe nur einmal beim ersten Empfang festlegen
+      if (!playerColor) {
+        const index = (clientCount - 1) % playerColors.length;
+        playerColor = playerColors[index];
+      }
       break;
 
     case 'draw-shell':
