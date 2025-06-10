@@ -82,7 +82,7 @@ socket.addEventListener('message', (event) => {
   }
 });
 
-  /*
+  
   switch (type) {
     
   case '*client-id*':
