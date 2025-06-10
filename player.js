@@ -12,15 +12,19 @@ const webSocketServer = 'wss://nosch.uber.space/web-rooms/';
 const socket = new WebSocket(webSocketServer);
 
 let shellCount = 0;
-
 let clientId = null;
-//const playerColors = ['pink', 'black', 'lightblue', 'darkblue', 'white'];
-//let playerColor = 'pink'; // Standard, falls etwas schiefläuft
 let clientCount = 0;
 
+const clientColorMap = {}; // Map zur Speicherung der Farben für jeden Client
+let playerColor = 'pink'; // Standardfarbe für den Fall von Fehlern
+
+function generateRandomColor() {
+  return #${Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')};
+}
+
 function updateCounters() {
-  document.getElementById('player-count').textContent = `Spieler: ${clientCount}`;
-  document.getElementById('shell-count').textContent = `Muscheln: ${shellCount}`;
+  document.getElementById('player-count').textContent = Spieler: ${clientCount};
+  document.getElementById('shell-count').textContent = Muscheln: ${shellCount};
 }
 
 // Board beim Start leeren (sandfarben)
@@ -29,45 +33,33 @@ ctx.fillRect(0, 0, canvasSize, canvasSize);
 
 // Verbindung geöffnet
 socket.addEventListener('open', () => {
-  socket.send(JSON.stringify(['*enter-room*', 'muschelraum']));
-  socket.send(JSON.stringify(['*subscribe-client-count*']));
+  socket.send(JSON.stringify(['enter-room', 'muschelraum']));
+  socket.send(JSON.stringify(['subscribe-client-count']));
   setInterval(() => socket.send(''), 30000); // Verbindung aktiv halten
 });
-/*
+
 // Nachrichten vom Server verarbeiten
 socket.addEventListener('message', (event) => {
   if (!event.data) return;
-  const incoming = JSON.parse(event.data);
-  const type = incoming[0];
-  function generateRandomColor() {
-  return `#${Math.floor(Math.random()*16777215).toString(16)}`;
-} */
 
-const clientColorMap = {}; // Map zur Speicherung der Farben für jeden Client
-let playerColor = 'pink'; // Standardfarbe für den Fall von Fehlern
-
-socket.addEventListener('message', (event) => {
-  if (!event.data) return;
   const incoming = JSON.parse(event.data);
   const type = incoming[0];
 
   switch (type) {
-    case '*client-id*':
+    case 'client-id':
       clientId = incoming[1];
 
-      // Falls dieser Client bereits eine Farbe hat, nutze sie
       if (clientColorMap[clientId]) {
         playerColor = clientColorMap[clientId];
       } else {
-        // Neue zufällige Farbe generieren und speichern
         playerColor = generateRandomColor();
         clientColorMap[clientId] = playerColor;
       }
 
-      socket.send(JSON.stringify(['*whoami*'])); // Triggert Aktualisierung
+      socket.send(JSON.stringify(['whoami']));
       break;
 
-    case '*client-count*':
+    case 'client-count':
       clientCount = incoming[1];
       updateCounters();
       break;
@@ -80,66 +72,19 @@ socket.addEventListener('message', (event) => {
       ctx.fill();
       break;
 
-      case '*error*':
+    case 'error':
       console.warn('Server-Fehler:', ...incoming[1]);
       break;
   }
 });
 
- /* 
-  switch (type) {
-    
-  case '*client-id*':
-  clientId = incoming[1];
-
-  // Farbe anhand der Reihenfolge vergeben (1. Spieler = pink, 2. = schwarz, ...)
-  // ACHTUNG: clientCount wird erst kurz danach empfangen, daher kleinen Workaround:
-  socket.send(JSON.stringify(['*whoami*'])); // Triggert serverseitig keine Antwort, aber clientCount wird hoffentlich bald aktualisiert
-  break;
-
-case '*client-count*':
-  clientCount = incoming[1];
-
-   /* if (clientId && clientCount <= playerColors.length) {
-    playerColor = playerColors[clientCount - 1];
-  } */
-  
-  // Spielerfarbe zuweisen, aber nur wenn clientId bereits gesetzt wurde:
- if (clientId) {
-  playerColor = playerColors[(clientCount - 1) % playerColors.length];
-  }
-
-  updateCounters();
-  break;
-  }
-
-/*
-    case '*client-count*':
-      clientCount = incoming[1];
-      updateCounters();
-      break;
-    case 'draw-shell':
-      const [_, drawX, drawY, color] = incoming;
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.roundRect(drawX, drawY, 10, 10, 5);
-      ctx.fill();
-      // Wichtig: kein shellCount++ hier!
-      break;
-      */
-    case '*error*':
-      console.warn('Server-Fehler:', ...incoming[1]);
-      break;
-  }
-});
-*/
 socket.addEventListener('close', () => {
   if (infoDisplay) {
     infoDisplay.textContent = 'Verbindung getrennt';
   }
 });
 
-// Klick auf Canvas → pinkes rundes Rechteck
+// Klick auf Canvas → farbiges rundes Rechteck
 canvas.addEventListener('click', (e) => {
   const rect = canvas.getBoundingClientRect();
   const clickX = (e.clientX - rect.left);
@@ -158,7 +103,7 @@ canvas.addEventListener('click', (e) => {
   updateCounters();
 
   // An andere Spieler senden
-  socket.send(JSON.stringify(['*broadcast-message*', ['draw-shell', x, y, playerColor]]));
+  socket.send(JSON.stringify(['broadcast-message', ['draw-shell', x, y, playerColor]]));
 });
 
 // Board leeren
