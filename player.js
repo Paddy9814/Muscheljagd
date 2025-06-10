@@ -15,27 +15,27 @@ let shellCount = 0;
 let clientId = null;
 let clientCount = 0;
 
-// Farben fest definieren
+// Feste Farben für Spieler – maximal 5 verschiedene
 const playerColors = ['pink', 'black', 'lightblue', 'darkblue', 'white'];
-let playerColor = 'pink'; // wird beim *client-id*-Event gesetzt
+let playerColor = null;
 
 function updateCounters() {
   document.getElementById('player-count').textContent = `Spieler: ${clientCount}`;
   document.getElementById('shell-count').textContent = `Muscheln: ${shellCount}`;
 }
 
-// Board zu Beginn sandfarben füllen
+// Canvas anfangs füllen
 ctx.fillStyle = backgroundColor;
 ctx.fillRect(0, 0, canvasSize, canvasSize);
 
-// Verbindung aufgebaut
+// WebSocket geöffnet
 socket.addEventListener('open', () => {
   socket.send(JSON.stringify(['*enter-room*', 'muschelraum']));
   socket.send(JSON.stringify(['*subscribe-client-count*']));
-  setInterval(() => socket.send(''), 30000);
+  setInterval(() => socket.send(''), 30000); // Verbindung wach halten
 });
 
-// Nachrichten vom Server
+// Nachrichten vom Server verarbeiten
 socket.addEventListener('message', (event) => {
   if (!event.data) return;
   const incoming = JSON.parse(event.data);
@@ -43,19 +43,19 @@ socket.addEventListener('message', (event) => {
 
   switch (type) {
     case '*client-id*':
-  clientId = incoming[1];
-  break;
+      clientId = incoming[1];
+      break;
 
-case '*client-count*':
-  clientCount = incoming[1];
-  updateCounters();
+    case '*client-count*':
+      clientCount = incoming[1];
+      updateCounters();
 
-  // Nur beim ersten Mal setzen, damit Farbe fix bleibt
-  if (!playerColor || playerColor === 'pink') {
-    const index = (clientCount - 1) % playerColors.length;
-    playerColor = playerColors[index];
-  }
-  break;
+      // Spielerfarbe nur einmal beim ersten Empfang festlegen
+      if (!playerColor) {
+        const index = (clientCount - 1) % playerColors.length;
+        playerColor = playerColors[index];
+      }
+      break;
 
     case 'draw-shell':
       const [_, drawX, drawY, color] = incoming;
@@ -77,7 +77,7 @@ socket.addEventListener('close', () => {
   }
 });
 
-// Canvas-Klick → zeichne Muschel in Spielerfarbe
+// Klick auf Canvas → Muschel in Spielerfarbe zeichnen
 canvas.addEventListener('click', (e) => {
   const rect = canvas.getBoundingClientRect();
   const clickX = (e.clientX - rect.left);
@@ -87,7 +87,7 @@ canvas.addEventListener('click', (e) => {
   const x = clickX - size / 2;
   const y = clickY - size / 2;
 
-  ctx.fillStyle = playerColor;
+  ctx.fillStyle = playerColor || 'pink';
   ctx.beginPath();
   ctx.roundRect(x, y, size, size, size / 2);
   ctx.fill();
@@ -98,7 +98,7 @@ canvas.addEventListener('click', (e) => {
   socket.send(JSON.stringify(['*broadcast-message*', ['draw-shell', x, y, playerColor]]));
 });
 
-// Board löschen
+// Canvas leeren
 clearBtn.addEventListener('click', () => {
   ctx.fillStyle = backgroundColor;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
