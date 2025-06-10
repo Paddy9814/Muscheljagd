@@ -79,10 +79,14 @@ socket.addEventListener('message', (event) => {
       ctx.roundRect(drawX, drawY, 10, 10, 5);
       ctx.fill();
       break;
+
+      case '*error*':
+      console.warn('Server-Fehler:', ...incoming[1]);
+      break;
   }
 });
 
-  
+ /* 
   switch (type) {
     
   case '*client-id*':
@@ -128,7 +132,7 @@ case '*client-count*':
       break;
   }
 });
-
+*/
 socket.addEventListener('close', () => {
   if (infoDisplay) {
     infoDisplay.textContent = 'Verbindung getrennt';
