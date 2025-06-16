@@ -105,7 +105,7 @@ socket.addEventListener('message', (event) => {
       const [_, x, y, color] = incoming;
       ctx.fillStyle = color;
       ctx.beginPath();
-      ctx.rect(x, y, currentShellSize, currentShellSize); // Größe der Muscheln
+      ctx.arc(x + currentShellSize / 2, y + currentShellSize / 2, currentShellSize / 2, 0, Math.PI * 2);
       ctx.fill();
       break;
   }
