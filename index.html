@@ -1,21 +1,38 @@
-<!DOCTYPE html>	
-	<html lang="en">
-	<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Muscheljagd</title>
-	<link rel="stylesheet" href="muschel.css">
-	<script src="player.js" defer></script>
-	</head>
-	<body>
-	<h1 id="title-display">Muscheljagd</h1>
-	<canvas id="canvas" width="800" height="600"></canvas>
-	<div id="info-display">
-  	<span id="shell-count">Muscheln: 0</span> |
-	<span id="player-count">Spieler: 0</span>
-	</div>
-	<div class="controls">
-	<button id="clear-btn">Clear Board</button>
-	</div>
-	</body>
-	</html>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Muscheljagd</title>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+    <h1 id="title-display">Muscheljagd</h1>
+
+    <div class="header-canvas-container">
+        <canvas id="canvas" width="800" height="600" aria-label="Spielfläche"></canvas>
+        <div id="player-color-display" aria-live="polite" aria-atomic="true">
+            Deine Farbe:<br />
+            <span id="color-name">...</span>
+            <div id="color-selection-container" style="margin-top: 12px;">
+                <span style="display:block;margin-bottom:0.5em;font-weight:600;">Wähle deine Farbe:</span>
+                <div id="color-selection" role="list" aria-label="Farbauswahl"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="info-controls-container" aria-label="Spielinformationen und Steuerung">
+        <div id="info-display" aria-live="polite" aria-atomic="true" role="status">
+            <span id="player-count">Spieler: 0</span>
+            <span class="separator" aria-hidden="true">|</span>
+            <span id="shell-count">Muscheln: 0</span>
+        </div>
+        <div class="controls">
+            <button id="clear-btn" aria-label="Spielbrett leeren">Clear Board</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
