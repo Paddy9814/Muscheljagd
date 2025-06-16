@@ -1,107 +1,199 @@
-const titleDisplay = document.getElementById('title-display');
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-const clearBtn = document.getElementById('clear-btn');
-const infoDisplay = document.getElementById('info-display');
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const clearBtn = document.getElementById('clear-btn');
+  const playerCountDisplay = document.getElementById('player-count');
+  const shellCountDisplay = document.getElementById('shell-count');
+  const colorNameDisplay = document.getElementById('color-name');
+  const colorSelectionContainer = document.getElementById('color-selection');
+  const colors = ['pink', 'black', 'lightblue', 'darkblue', 'white', 'peachpuff', 'plum', 'indigo'];
 
-const canvasSize = 256;
-const backgroundColor = '#f4e3c1';
+  const canvasWidth = canvas.width;
+  const canvasHeight = canvas.height;
+  const backgroundColor = '#faedcd';
 
-// WebSocket-Verbindung
-const webSocketServer = 'wss://nosch.uber.space/web-rooms/';
-const socket = new WebSocket(webSocketServer);
+  const webSocketServer = 'wss://nosch.uber.space/web-rooms/';
+  const socket = new WebSocket(webSocketServer);
 
-let shellCount = 0;
-let clientId = null;
-let clientCount = 0;
+  let shellCount = 0;
+  let clientCount = 0;
+  let playerColor = null;
+  let assignedColors = new Set();
+  const shellSize = 10; // Feste Größe, keine dynamische Anpassung
 
-// Feste Farben für Spieler – maximal 5 verschiedene
-const playerColors = ['pink', 'black', 'lightblue', 'darkblue', 'white'];
-let playerColor = null;
+  function updatePlayerColorDisplay() {
+    if (colorNameDisplay) {
+      colorNameDisplay.textContent = playerColor || '...';
+      colorNameDisplay.style.backgroundColor = playerColor || 'transparent';
+      colorNameDisplay.style.color =
+        playerColor && ['black', 'darkblue', 'indigo', 'plum', 'rebeccapurple'].includes(playerColor.toLowerCase())
+          ? '#fff'
+          : '#000';
+      colorNameDisplay.style.padding = playerColor ? '0.3em 0.8em' : '';
+      colorNameDisplay.style.borderRadius = playerColor ? '12px' : '';
+      colorNameDisplay.style.fontWeight = playerColor ? '700' : '';
+    }
+  }
 
-function updateCounters() {
-  document.getElementById('player-count').textContent = `Spieler: ${clientCount}`;
-  document.getElementById('shell-count').textContent = `Muscheln: ${shellCount}`;
-}
+  function updateCounters() {
+    playerCountDisplay.textContent = \`Spieler: \${clientCount}\`;
+    shellCountDisplay.textContent = \`Muscheln: \${shellCount}\`;
+  }
 
-// Canvas anfangs füllen
-ctx.fillStyle = backgroundColor;
-ctx.fillRect(0, 0, canvasSize, canvasSize);
+  function clearCanvas() {
+    ctx.fillStyle = backgroundColor;
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+  }
+  clearCanvas();
 
-// WebSocket geöffnet
-socket.addEventListener('open', () => {
-  socket.send(JSON.stringify(['*enter-room*', 'muschelraum']));
-  socket.send(JSON.stringify(['*subscribe-client-count*']));
-  setInterval(() => socket.send(''), 30000); // Verbindung wach halten
-});
-
-// Nachrichten vom Server verarbeiten
-socket.addEventListener('message', (event) => {
-  if (!event.data) return;
-  const incoming = JSON.parse(event.data);
-  const type = incoming[0];
-
-  switch (type) {
-    case '*client-id*':
-      clientId = incoming[1];
-      break;
-
-    case '*client-count*':
-      clientCount = incoming[1];
-      updateCounters();
-
-      // Spielerfarbe nur einmal beim ersten Empfang festlegen
-      if (!playerColor) {
-        const index = (clientCount - 1) % playerColors.length;
-        playerColor = playerColors[index];
+  function renderColorSelection() {
+    colorSelectionContainer.innerHTML = '';
+    colors.forEach(color => {
+      const button = document.createElement('button');
+      button.style.backgroundColor = color;
+      button.type = 'button';
+      button.disabled = assignedColors.has(color);
+      if (color === playerColor) {
+        button.classList.add('selected');
+      } else {
+        button.classList.remove('selected');
       }
-      break;
-
-    case 'draw-shell':
-      const [_, drawX, drawY, color] = incoming;
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.roundRect(drawX, drawY, 10, 10, 5);
-      ctx.fill();
-      break;
-
-    case '*error*':
-      console.warn('Server-Fehler:', ...incoming[1]);
-      break;
+      button.addEventListener('click', () => {
+        if (button.disabled) return;
+        playerColor = color;
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify(['*color-selection*', playerColor]));
+        }
+        updatePlayerColorDisplay();
+        renderColorSelection();
+      });
+      colorSelectionContainer.appendChild(button);
+    });
   }
-});
 
-socket.addEventListener('close', () => {
-  if (infoDisplay) {
-    infoDisplay.textContent = 'Verbindung getrennt';
+  function updateAssignedColors(colorsArray) {
+    assignedColors = new Set(colorsArray);
+    renderColorSelection();
   }
-});
 
-// Klick auf Canvas → Muschel in Spielerfarbe zeichnen
-canvas.addEventListener('click', (e) => {
-  const rect = canvas.getBoundingClientRect();
-  const clickX = (e.clientX - rect.left);
-  const clickY = (e.clientY - rect.top);
+  socket.addEventListener('open', () => {
+    socket.send(JSON.stringify(['*enter-room*', 'muschelraum']));
+    socket.send(JSON.stringify(['*subscribe-client-count*']));
+    socket.send(JSON.stringify(['*request-color-status*']));
+  });
 
-  const size = 10;
-  const x = clickX - size / 2;
-  const y = clickY - size / 2;
+  socket.addEventListener('message', event => {
+    if (!event.data) return;
+    let incoming;
+    try {
+      incoming = JSON.parse(event.data);
+    } catch {
+      return;
+    }
 
-  ctx.fillStyle = playerColor || 'pink';
-  ctx.beginPath();
-  ctx.roundRect(x, y, size, size, size / 2);
-  ctx.fill();
+    const type = incoming[0];
 
-  shellCount++;
+    switch (type) {
+      case '*client-count*':
+        clientCount = incoming[1];
+        updateCounters();
+        break;
+
+      case '*color-selection*':
+        if (incoming[1] && incoming[1].color) {
+          assignedColors.add(incoming[1].color);
+          renderColorSelection();
+        }
+        break;
+
+      case '*color-status*':
+        if (Array.isArray(incoming[1])) {
+          updateAssignedColors(incoming[1]);
+        }
+        renderColorSelection();
+        break;
+
+      case 'draw-shell':
+        {
+          const [_, drawX, drawY, color] = incoming;
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          if (typeof ctx.roundRect === 'function') {
+            ctx.roundRect(drawX, drawY, shellSize, shellSize, shellSize / 2);
+          } else {
+            ctx.rect(drawX, drawY, shellSize, shellSize);
+          }
+          ctx.fill();
+        }
+        break;
+    }
+  });
+
+  socket.addEventListener('close', () => {
+    const infoDisplay = document.getElementById('info-display');
+    if (infoDisplay) {
+      infoDisplay.textContent = 'Verbindung getrennt';
+    }
+  });
+
+  function getCanvasCoordinates(e) {
+    const rect = canvas.getBoundingClientRect();
+    let clientX, clientY;
+
+    if (e.touches && e.touches.length) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    return {
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY,
+    };
+  }
+
+  function handleCanvasInput(e) {
+    e.preventDefault();
+    if (!playerColor) {
+      alert('Bitte wähle zuerst eine Farbe!');
+      return;
+    }
+    const pos = getCanvasCoordinates(e);
+
+    const x = pos.x - shellSize / 2;
+    const y = pos.y - shellSize / 2;
+
+    ctx.fillStyle = playerColor;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === 'function') {
+      ctx.roundRect(x, y, shellSize, shellSize, shellSize / 2);
+    } else {
+      ctx.rect(x, y, shellSize, shellSize);
+    }
+    ctx.fill();
+
+    shellCount++;
+    updateCounters();
+
+    if (socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify(['*broadcast-message*', ['draw-shell', x, y, playerColor]]));
+    }
+  }
+
+  canvas.addEventListener('click', handleCanvasInput);
+  canvas.addEventListener('touchstart', handleCanvasInput, { passive: false });
+
+  clearBtn.addEventListener('click', () => {
+    clearCanvas();
+    shellCount = 0;
+    updateCounters();
+  });
+
   updateCounters();
+  updatePlayerColorDisplay();
+  renderColorSelection();
+})();
 
-  socket.send(JSON.stringify(['*broadcast-message*', ['draw-shell', x, y, playerColor]]));
-});
-
-// Canvas leeren
-clearBtn.addEventListener('click', () => {
-  ctx.fillStyle = backgroundColor;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  shellCount = 0;
-  updateCounters();
-});
