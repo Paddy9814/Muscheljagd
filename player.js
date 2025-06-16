@@ -1,5 +1,10 @@
 const canvas = document.getElementById('canvas');
   const ctx = canvas.getContext('2d');
+
+// 🛠️ WICHTIGER FIX: Sichtbare Canvas-Größe exakt festlegen
+canvas.style.width = canvas.width + 'px';
+canvas.style.height = canvas.height + 'px';
+
   const infoDisplay = document.getElementById('info-display');
   const playerCountDisplay = document.getElementById('player-count');
   const shellCountDisplay = document.getElementById('shell-count');
