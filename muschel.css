@@ -112,6 +112,9 @@
     flex-direction: column;
     align-items: center;
     gap: 20px;
+
+    text-align: center;
+      
   }
 
   #info-display {
@@ -119,6 +122,10 @@
     color: #333;
     user-select: none;
     display: flex;
+
+    justify-content: center;
+    text-align: center;
+      
     gap: 1.5em;
     justify-content: center;
     width: 100%;
