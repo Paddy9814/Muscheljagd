@@ -90,8 +90,8 @@ function updateAssignedColors(arr) {
 
 // Hilfsfunktion: Koordinaten in Key für Map umwandeln (gerundet auf ganzzahlige Position)
 function getShellKey(x, y) {
-  const keyX = Math.floor(x);
-  const keyY = Math.floor(y);
+  const keyX = Math.round(x);
+  const keyY = Math.round(y);
   return `${keyX},${keyY}`;
 }
 
