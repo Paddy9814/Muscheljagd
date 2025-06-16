@@ -41,10 +41,10 @@ const canvas = document.getElementById('canvas');
     shellCountDisplay.textContent = `Muscheln: ${shellCount}`;
   }
 
-  function clearCanvas() {
-    ctx.fillStyle = backgroundColor;
-    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-  }
+  //function clearCanvas() {
+    //ctx.fillStyle = backgroundColor;
+    //ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+  //}
 
   function renderColorSelection() {
     colorSelectionContainer.innerHTML = '';
@@ -166,12 +166,6 @@ const canvas = document.getElementById('canvas');
 
   canvas.addEventListener('click', handleCanvasInput);
   canvas.addEventListener('touchstart', handleCanvasInput, { passive: false });
-
-  clearBtn.addEventListener('click', () => {
-    clearCanvas();
-    shellCount = 0;
-    updateCounters();
-  });
 
   updateCounters();
   updatePlayerColorDisplay();
