@@ -3,29 +3,31 @@ const ctx = canvas.getContext('2d');
 const infoDisplay = document.getElementById('info-display');
 const playerCountDisplay = document.getElementById('player-count');
 const shellCountDisplay = document.getElementById('shell-count');
-const shellCountPerColorDisplay = document.getElementById('shell-count-per-color'); // Neu
 const colorNameDisplay = document.getElementById('color-name');
 const colorSelectionContainer = document.getElementById('color-selection');
+const shellCountPerColorContainer = document.getElementById('shell-count-per-color');
 
 const colors = ['pink', 'black', 'lightblue', 'darkblue', 'white', 'peachpuff', 'plum', 'indigo'];
 const canvasWidth = canvas.width;
 const canvasHeight = canvas.height;
-const backgroundColor = '#faedcd';
 
 const webSocketServer = 'wss://nosch.uber.space/web-rooms/';
 const socket = new WebSocket(webSocketServer);
-
-let shellCount = 0;
-let shellCountsByColor = {};
-colors.forEach(color => {
-  shellCountsByColor[color] = 0;
-});
 
 let clientId = null;
 let clientCount = 0;
 let playerColor = null;
 let assignedColors = new Set();
-let currentShellSize = 20; // Größe der Muscheln
+let currentShellSize = 20;
+
+let shellCount = 0;
+
+// Map speichert: key = "x,y", value = Farbe der Muschel an dieser Position
+const shellMap = new Map();
+
+// Zähler für jede Farbe (starten bei 0)
+const shellCountPerColor = {};
+colors.forEach(c => shellCountPerColor[c] = 0);
 
 function updatePlayerColorDisplay() {
   if (colorNameDisplay) {
@@ -42,38 +44,24 @@ function updatePlayerColorDisplay() {
   }
 }
 
-function incrementShellCount(color) {
-  if (!shellCountsByColor[color]) shellCountsByColor[color] = 0;
-  shellCountsByColor[color]++;
-}
-
-function updateShellCountsDisplay() {
-  if (!shellCountPerColorDisplay) return;
-
-  shellCountPerColorDisplay.innerHTML = '';
-
-  colors.forEach(color => {
-    const count = shellCountsByColor[color] || 0;
-    const colorDot = `<span style="display:inline-block; width: 14px; height:14px; background-color:${color}; border-radius:50%; margin-right:6px; vertical-align:middle;"></span>`;
-    const countText = `${count}`;
-    const span = document.createElement('span');
-    span.style.marginRight = '16px';
-    span.style.fontWeight = '600';
-    span.style.fontSize = '1rem';
-    span.style.color = '#333';
-    span.innerHTML = colorDot + countText;
-
-    shellCountPerColorDisplay.appendChild(span);
-  });
-}
-
 function updateCounters() {
   playerCountDisplay.textContent = `Spieler: ${clientCount}`;
-
-  shellCount = Object.values(shellCountsByColor).reduce((a, b) => a + b, 0);
+  shellCount = Object.values(shellCountPerColor).reduce((a,b) => a+b, 0);
   shellCountDisplay.textContent = `Muscheln: ${shellCount}`;
 
-  updateShellCountsDisplay();
+  // Anzeige der Muscheln pro Farbe aktualisieren
+  shellCountPerColorContainer.innerHTML = '';
+  for (const color of colors) {
+    const count = shellCountPerColor[color];
+    if (count > 0) {
+      const span = document.createElement('span');
+      span.style.color = color;
+      span.style.fontWeight = 'bold';
+      span.style.marginRight = '1em';
+      span.textContent = `${color}: ${count}`;
+      shellCountPerColorContainer.appendChild(span);
+    }
+  }
 }
 
 function renderColorSelection() {
@@ -98,6 +86,45 @@ function renderColorSelection() {
 function updateAssignedColors(arr) {
   assignedColors = new Set(arr);
   renderColorSelection();
+}
+
+// Hilfsfunktion: Koordinaten in Key für Map umwandeln (gerundet auf ganzzahlige Position)
+function getShellKey(x, y) {
+  const keyX = Math.floor(x);
+  const keyY = Math.floor(y);
+  return `${keyX},${keyY}`;
+}
+
+function drawShell(x, y, color, shouldBroadcast = true) {
+  const key = getShellKey(x, y);
+  const oldColor = shellMap.get(key);
+
+  if (oldColor === color) {
+    // Gleiche Farbe an gleicher Stelle, nix ändern
+    return;
+  }
+
+  // Falls alte Farbe existiert, dann Zähler verringern
+  if (oldColor) {
+    shellCountPerColor[oldColor] = Math.max(0, shellCountPerColor[oldColor] - 1);
+  }
+
+  // Neue Farbe an Position speichern und Zähler erhöhen
+  shellMap.set(key, color);
+  shellCountPerColor[color] = (shellCountPerColor[color] || 0) + 1;
+
+  // Muschel zeichnen (rund)
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(x + currentShellSize / 2, y + currentShellSize / 2, currentShellSize / 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  updateCounters();
+
+  // Nachricht senden, falls gewünscht (z.B. nicht bei eingehenden Nachrichten)
+  if (shouldBroadcast) {
+    socket.send(JSON.stringify(['*broadcast-message*', ['draw-shell', x, y, color]]));
+  }
 }
 
 socket.addEventListener('open', () => {
@@ -138,13 +165,7 @@ socket.addEventListener('message', (event) => {
 
     case 'draw-shell':
       const [_, x, y, color] = incoming;
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.arc(x + currentShellSize / 2, y + currentShellSize / 2, currentShellSize / 2, 0, Math.PI * 2);
-      ctx.fill();
-
-      incrementShellCount(color);
-      updateCounters();
+      drawShell(x, y, color, false);
       break;
   }
 });
@@ -157,37 +178,4 @@ socket.addEventListener('close', () => {
 
 function getCanvasCoordinates(e) {
   const rect = canvas.getBoundingClientRect();
-  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
-  return {
-    x: (clientX - rect.left) * scaleX,
-    y: (clientY - rect.top) * scaleY
-  };
-}
-
-function handleCanvasInput(e) {
-  e.preventDefault();
-  if (!playerColor) return alert('Bitte wähle zuerst eine Farbe!');
-  const pos = getCanvasCoordinates(e);
-  const x = pos.x - currentShellSize / 2;
-  const y = pos.y - currentShellSize / 2;
-
-  ctx.fillStyle = playerColor;
-  ctx.beginPath();
-  ctx.arc(x + currentShellSize / 2, y + currentShellSize / 2, currentShellSize / 2, 0, Math.PI * 2);
-  ctx.fill();
-
-  incrementShellCount(playerColor);
-  updateCounters();
-
-  socket.send(JSON.stringify(['*broadcast-message*', ['draw-shell', x, y, playerColor]]));
-}
-
-canvas.addEventListener('click', handleCanvasInput);
-canvas.addEventListener('touchstart', handleCanvasInput, { passive: false });
-
-updateCounters();
-updatePlayerColorDisplay();
-renderColorSelection();
+  const clientX = e.touches ? e.touches[0]
