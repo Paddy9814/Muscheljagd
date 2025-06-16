@@ -59,6 +59,12 @@
     font-weight: 600;
     padding: 1em 1.5em;
     min-width: 180px;
+      
+    max-width: 520px;
+    width: 100%;
+    align-items: center;
+    margin: 0 auto;
+      
     text-align: center;
     user-select: none;
     display: flex;
