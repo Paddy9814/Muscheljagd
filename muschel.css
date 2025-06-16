@@ -19,7 +19,7 @@
 
   h1#title-display {
     margin-bottom: 24px;
-    font-weight: 900;
+    font-weight: 500;
     font-size: 2.8rem;
     user-select: none;
   }
