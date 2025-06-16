@@ -99,19 +99,26 @@ function drawShell(x, y, color, shouldBroadcast = true) {
   const key = getShellKey(x, y);
   const oldColor = shellMap.get(key);
 
+  // Debug Log
+  console.log(`Versuche Muschel bei ${key} mit Farbe ${color} zu zeichnen.`);
+  if (oldColor) console.log(`Gefundene alte Farbe an der Stelle: ${oldColor}`);
+
   if (oldColor === color) {
     // Gleiche Farbe an gleicher Stelle, nix ändern
+    console.log('Muschel an dieser Stelle hat bereits diese Farbe. Keine Änderung.');
     return;
   }
 
   // Falls alte Farbe existiert, dann Zähler verringern
   if (oldColor) {
-    shellCountPerColor[oldColor] = Math.max(0, shellCountPerColor[oldColor] - 1);
+    shellCountPerColor[oldColor] = Math.max(0, (shellCountPerColor[oldColor] || 1) - 1);
+    console.log(`Zähler für Farbe ${oldColor} reduziert auf ${shellCountPerColor[oldColor]}`);
   }
 
   // Neue Farbe an Position speichern und Zähler erhöhen
   shellMap.set(key, color);
   shellCountPerColor[color] = (shellCountPerColor[color] || 0) + 1;
+  console.log(`Zähler für Farbe ${color} erhöht auf ${shellCountPerColor[color]}`);
 
   // Muschel zeichnen (rund)
   ctx.fillStyle = color;
@@ -121,7 +128,6 @@ function drawShell(x, y, color, shouldBroadcast = true) {
 
   updateCounters();
 
-  // Nachricht senden, falls gewünscht (z.B. nicht bei eingehenden Nachrichten)
   if (shouldBroadcast) {
     socket.send(JSON.stringify(['*broadcast-message*', ['draw-shell', x, y, color]]));
   }
