@@ -7,7 +7,7 @@ const shellCountPerColorDisplay = document.getElementById('shell-count-per-color
 const colorNameDisplay = document.getElementById('color-name');
 const colorSelectionContainer = document.getElementById('color-selection');
 
-const colors = ['pink', 'black', 'lightblue', 'darkblue', 'white', 'peachpuff', 'plum', 'indigo'];
+const colors = ['pink', 'black', 'lightblue', 'darkblue', 'white'];
 const canvasWidth = canvas.width;
 const canvasHeight = canvas.height;
 const backgroundColor = '#faedcd';
