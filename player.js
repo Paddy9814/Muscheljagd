@@ -194,8 +194,8 @@ function handleCanvasInput(e) {
   ctx.arc(x + currentShellSize / 2, y + currentShellSize / 2, currentShellSize / 2, 0, Math.PI * 2);
   ctx.fill();
 
-  //incrementShellCount(playerColor);
-  //checkForWin(playerColor);
+  incrementShellCount(playerColor);
+  checkForWin(playerColor);
   updateCounters();
 
   socket.send(JSON.stringify(['*broadcast-message*', ['draw-shell', x, y, playerColor]]));
