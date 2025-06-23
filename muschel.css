@@ -13,7 +13,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16px 8px 64px; /* ⬅️ Mehr Padding unten */
+  padding: 16px 8px 16px;
   min-height: 100vh;
 }
 
@@ -104,7 +104,7 @@ canvas#canvas {
   align-items: center;
   gap: 20px;
   text-align: center;
-  margin-bottom: 40px; /* ⬅️ Mehr Platz nach unten */
+  margin-bottom: 40px;
 }
 
 #info-display {
@@ -121,6 +121,7 @@ canvas#canvas {
 
 #shell-count-per-color {
   margin-top: 16px;
+  margin-bottom: 16px;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
