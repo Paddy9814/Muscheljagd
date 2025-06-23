@@ -101,9 +101,15 @@ function updateAssignedColors(arr) {
 }
 
 function checkForWin(color) {
+  if (gameOver) return;
   if (shellCountsByColor[color] >= SHELL_LIMIT) {
     gameOver = true;
-    alert(`🎉 Team ${color.toUpperCase()} hat mit ${SHELL_LIMIT} Muscheln gewonnen!`);
+
+    // Kurze Pause, dann Seite neu laden
+    setTimeout(() => {
+      alert(`🎉 Team ${color.toUpperCase()} hat mit ${SHELL_LIMIT} Muscheln gewonnen!\nDas Spiel startet jetzt neu...`);
+      location.reload();
+    }, 100); // kleine Verzögerung erlaubt UI-Update
   }
 }
 
@@ -178,6 +184,7 @@ function getCanvasCoordinates(e) {
 function handleCanvasInput(e) {
   e.preventDefault();
   if (!playerColor) return alert('Bitte wähle zuerst eine Farbe!');
+  if (gameOver) return;
   const pos = getCanvasCoordinates(e);
   const x = pos.x - currentShellSize / 2;
   const y = pos.y - currentShellSize / 2;
@@ -187,10 +194,8 @@ function handleCanvasInput(e) {
   ctx.arc(x + currentShellSize / 2, y + currentShellSize / 2, currentShellSize / 2, 0, Math.PI * 2);
   ctx.fill();
 
-  if (gameOver) return alert('Das Spiel ist vorbei! Neustart durch Refresh.');
-
-  incrementShellCount(playerColor);
-  checkForWin(playerColor);
+  //incrementShellCount(playerColor);
+  //checkForWin(playerColor);
   updateCounters();
 
   socket.send(JSON.stringify(['*broadcast-message*', ['draw-shell', x, y, playerColor]]));
