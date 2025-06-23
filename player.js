@@ -14,6 +14,9 @@ const backgroundColor = '#faedcd';
 const webSocketServer = 'wss://nosch.uber.space/web-rooms/';
 const socket = new WebSocket(webSocketServer);
 
+const SHELL_LIMIT = 100;
+let gameOver = false;
+
 let shellCount = 0;
 let shellCountsByColor = {};
 colors.forEach(color => {
@@ -97,6 +100,13 @@ function updateAssignedColors(arr) {
   renderColorSelection();
 }
 
+function checkForWin(color) {
+  if (shellCountsByColor[color] >= SHELL_LIMIT) {
+    gameOver = true;
+    alert(`🎉 Team ${color.toUpperCase()} hat mit ${SHELL_LIMIT} Muscheln gewonnen!`);
+  }
+}
+
 socket.addEventListener('open', () => {
   socket.send(JSON.stringify(['*enter-room*', 'muschelraum']));
   socket.send(JSON.stringify(['*subscribe-client-count*']));
@@ -141,6 +151,7 @@ socket.addEventListener('message', (event) => {
       ctx.fill();
 
       incrementShellCount(color);
+      checkForWin(color); 
       updateCounters();
       break;
   }
@@ -176,7 +187,10 @@ function handleCanvasInput(e) {
   ctx.arc(x + currentShellSize / 2, y + currentShellSize / 2, currentShellSize / 2, 0, Math.PI * 2);
   ctx.fill();
 
+  if (gameOver) return alert('Das Spiel ist vorbei! Neustart durch Refresh.');
+
   incrementShellCount(playerColor);
+  checkForWin(playerColor);
   updateCounters();
 
   socket.send(JSON.stringify(['*broadcast-message*', ['draw-shell', x, y, playerColor]]));
