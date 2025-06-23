@@ -29,6 +29,22 @@ let playerColor = null;
 let assignedColors = new Set();
 let currentShellSize = 20; // Größe der Muscheln
 
+// NEU: Array zur Speicherung aller gezeichneten Muscheln
+let shells = [];
+
+// Hilfsfunktion: sucht eine Muschel in der Nähe eines Punkts (x, y)
+function findShellAtPosition(x, y) {
+  for (const shell of shells) {
+    const dx = shell.x + currentShellSize / 2 - (x + currentShellSize / 2);
+    const dy = shell.y + currentShellSize / 2 - (y + currentShellSize / 2);
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    if (distance < currentShellSize) {
+      return shell;
+    }
+  }
+  return null;
+}
+
 function updatePlayerColorDisplay() {
   if (colorNameDisplay) {
     if (playerColor) {
@@ -47,6 +63,12 @@ function updatePlayerColorDisplay() {
 function incrementShellCount(color) {
   if (!shellCountsByColor[color]) shellCountsByColor[color] = 0;
   shellCountsByColor[color]++;
+}
+
+function decrementShellCount(color) {
+  if (shellCountsByColor[color] && shellCountsByColor[color] > 0) {
+    shellCountsByColor[color]--;
+  }
 }
 
 function updateShellCountsDisplay() {
@@ -105,11 +127,10 @@ function checkForWin(color) {
   if (shellCountsByColor[color] >= SHELL_LIMIT) {
     gameOver = true;
 
-    // Kurze Pause, dann Seite neu laden
     setTimeout(() => {
       alert(`🎉 Team ${color.toUpperCase()} hat mit ${SHELL_LIMIT} Muscheln gewonnen!\nDas Spiel startet jetzt neu...`);
       location.reload();
-    }, 100); // kleine Verzögerung erlaubt UI-Update
+    }, 100);
   }
 }
 
@@ -157,7 +178,11 @@ socket.addEventListener('message', (event) => {
       ctx.fill();
 
       incrementShellCount(color);
-      checkForWin(color); 
+      checkForWin(color);
+
+      // NEU: Shells Array updaten
+      shells.push({x, y, color});
+
       updateCounters();
       break;
   }
@@ -185,20 +210,33 @@ function handleCanvasInput(e) {
   e.preventDefault();
   if (!playerColor) return alert('Bitte wähle zuerst eine Farbe!');
   if (gameOver) return;
+
   const pos = getCanvasCoordinates(e);
   const x = pos.x - currentShellSize / 2;
   const y = pos.y - currentShellSize / 2;
 
-  ctx.fillStyle = playerColor;
-  ctx.beginPath();
-  ctx.arc(x + currentShellSize / 2, y + currentShellSize / 2, currentShellSize / 2, 0, Math.PI * 2);
-  ctx.fill();
+  const existingShell = findShellAtPosition(x, y);
+  if (existingShell) {
+    console.log(`Übermale Muschel von Team ${existingShell.color} an dieser Stelle!`);
+    // Später: Sandfarben übermalen & Punkte anpassen
+  } else {
+    console.log('Freie Stelle, normale Muschel zeichnen');
 
-  incrementShellCount(playerColor);
-  checkForWin(playerColor);
-  updateCounters();
+    ctx.fillStyle = playerColor;
+    ctx.beginPath();
+    ctx.arc(x + currentShellSize / 2, y + currentShellSize / 2, currentShellSize / 2, 0, Math.PI * 2);
+    ctx.fill();
 
-  socket.send(JSON.stringify(['*broadcast-message*', ['draw-shell', x, y, playerColor]]));
+    incrementShellCount(playerColor);
+    checkForWin(playerColor);
+
+    // Muschel speichern
+    shells.push({x, y, color: playerColor});
+
+    updateCounters();
+
+    socket.send(JSON.stringify(['*broadcast-message*', ['draw-shell', x, y, playerColor]]));
+  }
 }
 
 canvas.addEventListener('click', handleCanvasInput);
