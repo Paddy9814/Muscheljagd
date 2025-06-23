@@ -28,7 +28,7 @@ let clientCount = 0;
 let playerColor = null;
 let assignedColors = new Set();
 let currentShellSize = 20; // Größe der Muscheln
-const sandColor = '#e4d7b2'; // Sandfarbe zum Übermalen
+const sandColor = '#f4e3c1'; // Sandfarbe zum Übermalen
 
 // Array für alle Muscheln mit Position und Farbe speichern
 let shells = [];
@@ -153,10 +153,7 @@ function handleCanvasInput(e) {
 
   const existingShell = findShellAtPosition(x, y);
   if (existingShell) {
-    if (existingShell.color === playerColor) {
-      alert('Hier hast du bereits eine Muschel.');
-      return;
-    }
+    if (existingShell.color === playerColor) return;
 
     // Übermalen
     overpaintShell(existingShell);
