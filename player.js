@@ -2,8 +2,7 @@ const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const infoDisplay = document.getElementById('info-display');
 const playerCountDisplay = document.getElementById('player-count');
-const shellCountDisplay = document.getElementById('shell-count');
-const shellCountPerColorDisplay = document.getElementById('shell-count-per-color'); // Neu
+const shellCountPerColorDisplay = document.getElementById('shell-count-per-color');
 const colorNameDisplay = document.getElementById('color-name');
 const colorSelectionContainer = document.getElementById('color-selection');
 
@@ -71,8 +70,6 @@ function updateCounters() {
   playerCountDisplay.textContent = `Spieler: ${clientCount}`;
 
   shellCount = Object.values(shellCountsByColor).reduce((a, b) => a + b, 0);
-  shellCountDisplay.textContent = `Muscheln: ${shellCount}`;
-
   updateShellCountsDisplay();
 }
 
