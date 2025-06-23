@@ -12,10 +12,10 @@
   <div class="header-canvas-container">
     <canvas id="canvas" width="800" height="600" aria-label="Spielfläche"></canvas>
     <div id="player-color-display" aria-live="polite" aria-atomic="true">
-      Deine Farbe:<br/>
+      Dein Team:<br/>
       <span id="color-name">...</span>
       <div id="color-selection-container" style="margin-top: 12px;">
-        <span style="display:block;margin-bottom:0.5em;font-weight:600;">Wähle deine Farbe:</span>
+        <span style="display:block;margin-bottom:0.5em;font-weight:600;">Wähle dein Team:</span>
         <div id="color-selection" role="list" aria-label="Farbauswahl"></div>
       </div>
     </div>
@@ -23,9 +23,7 @@
 
   <div id="info-controls-container" aria-label="Spielinformationen und Steuerung">
     <div id="info-display" aria-live="polite" aria-atomic="true" role="status">
-      <span id="player-count">Spieler: 0</span>
-      <span class="separator" aria-hidden="true">|</span>
-      <span id="shell-count">Muscheln insgesamt: 0</span>
+      <span id="player-count">Spieler: 0</span> <span class="separator" aria-hidden="true">|</span><span id="shell-count">Muscheln insgesamt: 0</span>
         <!-- Neuer Container für Muscheln pro Farbe -->
     <div id="shell-count-per-color"></div>
     </div>
