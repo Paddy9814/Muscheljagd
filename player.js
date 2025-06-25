@@ -102,14 +102,17 @@ function updateAssignedColors(arr) {
 
 function checkForWin(color) {
   if (shellCountsByColor[color] >= SHELL_LIMIT && !gameOver) {
-    gameOver = true;
-    alert(`🎉 Team ${color.toUpperCase()} hat mit ${SHELL_LIMIT} Muscheln gewonnen!\nDas Spiel startet jetzt neu...`);
+    gameOver = true; // Sperre alle weiteren Klicks sofort
+
     socket.send(JSON.stringify(['*broadcast-message*', ['game-over', color]]));
+
     setTimeout(() => {
+      alert(`🎉 Team ${color.toUpperCase()} hat mit ${SHELL_LIMIT} Muscheln gewonnen!\nDas Spiel startet jetzt neu...`);
       location.reload();
-    }, 200);
+    }, 100);
   }
 }
+
 
 function findShellAtPosition(x, y) {
   for (const shell of shells) {
