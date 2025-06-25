@@ -101,9 +101,7 @@ function updateAssignedColors(arr) {
 }
 
 function checkForWin(color) {
-  if (gameOver) return;
-  if (shellCountsByColor[color] >= SHELL_LIMIT) {
-    gameOver = true;
+  if (shellCountsByColor[color] >= SHELL_LIMIT && !gameOver) {
     socket.send(JSON.stringify(['*broadcast-message*', ['game-over', color]]));
   }
 }
