@@ -9,33 +9,35 @@ const colorSelectionContainer = document.getElementById('color-selection');
 const colors = ['pink', 'black', 'white', 'lightblue', 'darkblue'];
 const canvasWidth = canvas.width;
 const canvasHeight = canvas.height;
+
+// WebSocket Verbindung zum Server
 const webSocketServer = 'wss://nosch.uber.space/web-rooms/';
 const socket = new WebSocket(webSocketServer);
 
-const SHELL_LIMIT = 100;
+const SHELL_LIMIT = 100; //100 Punkte Grenze Gewinn
 let gameOver = false;
 
-let shellCountsByColor = {};
+let shellCountsByColor = {}; //speichert Anzahl Muscheln pro Farbe, Start bei 0
 colors.forEach(color => {
   shellCountsByColor[color] = 0;
 });
 
-let clientCount = 0;
-let playerColor = null;
-let assignedColors = new Set();
+let clientCount = 0; //ID client und verbundene Spieler
+let playerColor = null; //eigene Farbe
+let assignedColors = new Set(); //andere Spieler Farbe
 let currentShellSize = 20;
-const sandColor = '#f4e3c1';
+const sandColor = '#f4e3c1'; //Farbe Muscheln übermalen
 
-let shells = [];
+let shells = []; //Array Muscheln Position, Farbe
 
-function updatePlayerColorDisplay() {
+function updatePlayerColorDisplay() { //aktuelle Teamfarbe
   if (colorNameDisplay) {
     if (playerColor) {
       colorNameDisplay.textContent = playerColor;
-      const darkColors = ['black', 'darkblue', 'indigo', 'plum'];
+      const darkColors = ['black', 'darkblue']; //Farbe Schrift bei dunklen Farben weiß
       colorNameDisplay.style.backgroundColor = playerColor;
-      colorNameDisplay.style.color = darkColors.includes(playerColor.toLowerCase()) ? '#fff' : '#000';
-    } else {
+      colorNameDisplay.style.color = darkColors.includes(playerColor.toLowerCase()) ? '#fff' : '#000'; //Textfarbe unterschiedlich je nach Hintergrund
+    } else { //noch keine Farbe ausgewählt
       colorNameDisplay.textContent = '...';
       colorNameDisplay.style.backgroundColor = 'transparent';
       colorNameDisplay.style.color = '#333';
@@ -43,22 +45,23 @@ function updatePlayerColorDisplay() {
   }
 }
 
-function incrementShellCount(color) {
+function incrementShellCount(color) { //erhöht Muschelpunktanzahl
   if (!shellCountsByColor[color]) shellCountsByColor[color] = 0;
   shellCountsByColor[color]++;
 }
 
-function decrementShellCount(color) {
+function decrementShellCount(color) { //verringert
   if (!shellCountsByColor[color]) shellCountsByColor[color] = 0;
   if (shellCountsByColor[color] > 0) shellCountsByColor[color]--;
 }
 
-function updateShellCountsDisplay() {
+function updateShellCountsDisplay() { //aktualisiert Punkte pro Team
   if (!shellCountPerColorDisplay) return;
 
   shellCountPerColorDisplay.innerHTML = '';
   colors.forEach(color => {
-    const count = shellCountsByColor[color] || 0;
+    const count = shellCountsByColor[color] || 0; //leert Anzeige für jede Farbe
+    //Muschel
     const colorDot = `<span style="display:inline-block; width: 14px; height:14px; background-color:${color}; border-radius:50%; margin-right:6px; vertical-align:middle;"></span>`;
     const countText = `${count}`;
     const span = document.createElement('span');
@@ -67,16 +70,16 @@ function updateShellCountsDisplay() {
     span.style.fontSize = '1rem';
     span.style.color = '#333';
     span.innerHTML = colorDot + countText;
-    shellCountPerColorDisplay.appendChild(span);
+    shellCountPerColorDisplay.appendChild(span); //hinzufügen Display
   });
 }
 
-function updateCounters() {
+function updateCounters() { //aktuelle Spieleranzahl
   playerCountDisplay.textContent = `Spieler: ${clientCount}`;
-  updateShellCountsDisplay();
+  updateShellCountsDisplay(); //aktualisiert Muschelanzahl pro Team
 }
 
-function renderColorSelection() {
+function renderColorSelection() { //Farbauswahl Button
   colorSelectionContainer.innerHTML = '';
   colors.forEach(color => {
     const button = document.createElement('button');
@@ -84,7 +87,7 @@ function renderColorSelection() {
     button.type = 'button';
     if (assignedColors.has(color)) button.disabled = true;
     if (color === playerColor) button.classList.add('selected');
-    button.addEventListener('click', () => {
+    button.addEventListener('click', () => { //Farbe wählen und anderen mitteilen
       if (button.disabled) return;
       playerColor = color;
       socket.send(JSON.stringify(['*color-selection*', playerColor]));
@@ -95,16 +98,16 @@ function renderColorSelection() {
   });
 }
 
-function updateAssignedColors(arr) {
+function updateAssignedColors(arr) { //aktualisiert vergebene Farben von Server
   assignedColors = new Set(arr);
   renderColorSelection();
 }
 
-function checkForWin(color) {
+function checkForWin(color) { //Gewinnprüfung
   if (shellCountsByColor[color] >= SHELL_LIMIT && !gameOver) {
-    gameOver = true; // Sperre alle weiteren Klicks sofort
+    gameOver = true; // Sperrt alle weiteren Klicks 
 
-    socket.send(JSON.stringify(['*broadcast-message*', ['game-over', color]]));
+    socket.send(JSON.stringify(['*broadcast-message*', ['game-over', color]])); //sendet die Message an alle
 
     setTimeout(() => {
       alert(`🎉 Team ${color.toUpperCase()} hat mit ${SHELL_LIMIT} Muscheln gewonnen!\nDas Spiel startet jetzt neu...`);
@@ -114,7 +117,7 @@ function checkForWin(color) {
 }
 
 
-function findShellAtPosition(x, y) {
+function findShellAtPosition(x, y) { //speichert Position Muschel zum Übermalen
   for (const shell of shells) {
     const dx = shell.x - x;
     const dy = shell.y - y;
@@ -126,7 +129,7 @@ function findShellAtPosition(x, y) {
   return null;
 }
 
-function overpaintShell(existingShell) {
+function overpaintShell(existingShell) { //Muschel übermalen
   const size = currentShellSize * 2;
   ctx.fillStyle = sandColor;
   ctx.beginPath();
@@ -134,7 +137,7 @@ function overpaintShell(existingShell) {
   ctx.fill();
 }
 
-function handleCanvasInput(e) {
+function handleCanvasInput(e) { //Reaktion Klick o. Touch Canva
   e.preventDefault();
   if (!playerColor) return alert('Bitte wähle zuerst eine Farbe!');
   if (gameOver) return;
@@ -144,26 +147,27 @@ function handleCanvasInput(e) {
   const y = pos.y - currentShellSize / 2;
 
   const existingShell = findShellAtPosition(x, y);
-  if (existingShell) {
+  if (existingShell) { //nicht Muschel doppelt malen
     if (existingShell.color === playerColor) return;
 
-    overpaintShell(existingShell);
+    overpaintShell(existingShell); //alte Muschel löschen
     decrementShellCount(existingShell.color);
     incrementShellCount(playerColor);
-    shells = shells.filter(s => !(s.x === existingShell.x && s.y === existingShell.y));
+    shells = shells.filter(s => !(s.x === existingShell.x && s.y === existingShell.y)); //alte Muschel aus Liste
     shells.push({ x, y, color: playerColor });
 
-    ctx.fillStyle = playerColor;
+    ctx.fillStyle = playerColor; //neue Muschel malen
     ctx.beginPath();
     ctx.arc(x + currentShellSize / 2, y + currentShellSize / 2, currentShellSize / 2, 0, Math.PI * 2);
     ctx.fill();
 
     checkForWin(playerColor);
     updateCounters();
+    //Nachricht an andere Spieler senden
     socket.send(JSON.stringify(['*broadcast-message*', ['overpaint-shell', existingShell.x, existingShell.y, existingShell.color, x, y, playerColor]]));
 
   } else {
-    ctx.fillStyle = playerColor;
+    ctx.fillStyle = playerColor; //neue Muschel platzieren
     ctx.beginPath();
     ctx.arc(x + currentShellSize / 2, y + currentShellSize / 2, currentShellSize / 2, 0, Math.PI * 2);
     ctx.fill();
@@ -172,18 +176,19 @@ function handleCanvasInput(e) {
     checkForWin(playerColor);
     shells.push({ x, y, color: playerColor });
     updateCounters();
+    //an andere Spieler senden
     socket.send(JSON.stringify(['*broadcast-message*', ['draw-shell', x, y, playerColor]]));
   }
 }
 
-socket.addEventListener('open', () => {
+socket.addEventListener('open', () => { //Verbindung Server öffnen, Daten abfragen
   socket.send(JSON.stringify(['*enter-room*', 'muschelraum']));
   socket.send(JSON.stringify(['*subscribe-client-count*']));
   socket.send(JSON.stringify(['*request-color-status*']));
-  setInterval(() => socket.send(''), 30000);
+  setInterval(() => socket.send(''), 30000); //Verbindung erhalten
 });
 
-socket.addEventListener('message', (event) => {
+socket.addEventListener('message', (event) => { //Nachrichten verarbeiten: Spieleranzahl, Farbauswahl, gezeichnete Muscheln usw.
   const incoming = JSON.parse(event.data);
   const type = incoming[0];
 
@@ -261,13 +266,13 @@ socket.addEventListener('message', (event) => {
   }
 });
 
-socket.addEventListener('close', () => {
+socket.addEventListener('close', () => { //Verbindung getrennt
   if (infoDisplay) {
     infoDisplay.textContent = 'Verbindung getrennt';
   }
 });
 
-function getCanvasCoordinates(e) {
+function getCanvasCoordinates(e) { //Mausposition o. Touch zu Canva
   const rect = canvas.getBoundingClientRect();
   const clientX = e.touches ? e.touches[0].clientX : e.clientX;
   const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -278,10 +283,10 @@ function getCanvasCoordinates(e) {
     y: (clientY - rect.top) * scaleY
   };
 }
-
+//Canva Klick und Touch aktivieren
 canvas.addEventListener('click', handleCanvasInput);
 canvas.addEventListener('touchstart', handleCanvasInput, { passive: false });
 
-updateCounters();
+updateCounters(); //Update Anzeige
 updatePlayerColorDisplay();
 renderColorSelection();
