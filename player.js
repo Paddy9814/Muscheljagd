@@ -9,7 +9,6 @@ const colorSelectionContainer = document.getElementById('color-selection');
 const colors = ['pink', 'black', 'white', 'lightblue', 'darkblue'];
 const canvasWidth = canvas.width;
 const canvasHeight = canvas.height;
-
 const webSocketServer = 'wss://nosch.uber.space/web-rooms/';
 const socket = new WebSocket(webSocketServer);
 
@@ -24,10 +23,9 @@ colors.forEach(color => {
 let clientCount = 0;
 let playerColor = null;
 let assignedColors = new Set();
-let currentShellSize = 20; // Größe der Muscheln
-const sandColor = '#f4e3c1'; // Sandfarbe zum Übermalen
+let currentShellSize = 20;
+const sandColor = '#f4e3c1';
 
-// Array für alle Muscheln mit Position und Farbe speichern
 let shells = [];
 
 function updatePlayerColorDisplay() {
@@ -59,7 +57,6 @@ function updateShellCountsDisplay() {
   if (!shellCountPerColorDisplay) return;
 
   shellCountPerColorDisplay.innerHTML = '';
-
   colors.forEach(color => {
     const count = shellCountsByColor[color] || 0;
     const colorDot = `<span style="display:inline-block; width: 14px; height:14px; background-color:${color}; border-radius:50%; margin-right:6px; vertical-align:middle;"></span>`;
@@ -70,15 +67,12 @@ function updateShellCountsDisplay() {
     span.style.fontSize = '1rem';
     span.style.color = '#333';
     span.innerHTML = colorDot + countText;
-
     shellCountPerColorDisplay.appendChild(span);
   });
 }
 
 function updateCounters() {
   playerCountDisplay.textContent = `Spieler: ${clientCount}`;
-
-  shellCount = Object.values(shellCountsByColor).reduce((a, b) => a + b, 0);
   updateShellCountsDisplay();
 }
 
@@ -110,15 +104,10 @@ function checkForWin(color) {
   if (gameOver) return;
   if (shellCountsByColor[color] >= SHELL_LIMIT) {
     gameOver = true;
-
-    setTimeout(() => {
-      alert(`🎉 Team ${color.toUpperCase()} hat mit ${SHELL_LIMIT} Muscheln gewonnen!\nDas Spiel startet jetzt neu...`);
-      location.reload();
-    }, 100);
+    socket.send(JSON.stringify(['*broadcast-message*', ['game-over', color]]));
   }
 }
 
-// Hilfsfunktion: prüft, ob eine Muschel an ungefähr der Position (x,y) liegt (innerhalb currentShellSize Radius)
 function findShellAtPosition(x, y) {
   for (const shell of shells) {
     const dx = shell.x - x;
@@ -152,20 +141,12 @@ function handleCanvasInput(e) {
   if (existingShell) {
     if (existingShell.color === playerColor) return;
 
-    // Übermalen
     overpaintShell(existingShell);
-
-    // Punkte anpassen
-    decrementShellCount(existingShell.color); // Gegner verliert Punkt
-    incrementShellCount(playerColor);         // Du bekommst Punkt
-
-    // Muschel aus Array entfernen
+    decrementShellCount(existingShell.color);
+    incrementShellCount(playerColor);
     shells = shells.filter(s => !(s.x === existingShell.x && s.y === existingShell.y));
+    shells.push({ x, y, color: playerColor });
 
-    // Eigene Muschel hinzufügen
-    shells.push({x, y, color: playerColor});
-
-    // Eigene Muschel zeichnen
     ctx.fillStyle = playerColor;
     ctx.beginPath();
     ctx.arc(x + currentShellSize / 2, y + currentShellSize / 2, currentShellSize / 2, 0, Math.PI * 2);
@@ -173,12 +154,9 @@ function handleCanvasInput(e) {
 
     checkForWin(playerColor);
     updateCounters();
-
-    // Sende Übermalung ans Netzwerk
     socket.send(JSON.stringify(['*broadcast-message*', ['overpaint-shell', existingShell.x, existingShell.y, existingShell.color, x, y, playerColor]]));
 
   } else {
-    // Freie Stelle, ganz normal zeichnen
     ctx.fillStyle = playerColor;
     ctx.beginPath();
     ctx.arc(x + currentShellSize / 2, y + currentShellSize / 2, currentShellSize / 2, 0, Math.PI * 2);
@@ -186,11 +164,8 @@ function handleCanvasInput(e) {
 
     incrementShellCount(playerColor);
     checkForWin(playerColor);
-
-    shells.push({x, y, color: playerColor});
-
+    shells.push({ x, y, color: playerColor });
     updateCounters();
-
     socket.send(JSON.stringify(['*broadcast-message*', ['draw-shell', x, y, playerColor]]));
   }
 }
@@ -208,7 +183,6 @@ socket.addEventListener('message', (event) => {
 
   switch (type) {
     case '*client-id*':
-      clientId = incoming[1];
       updatePlayerColorDisplay();
       renderColorSelection();
       break;
@@ -237,36 +211,26 @@ socket.addEventListener('message', (event) => {
       ctx.beginPath();
       ctx.arc(x + currentShellSize / 2, y + currentShellSize / 2, currentShellSize / 2, 0, Math.PI * 2);
       ctx.fill();
-
       incrementShellCount(color);
       checkForWin(color);
+      shells.push({ x, y, color });
       updateCounters();
-
-      shells.push({x, y, color});
       break;
     }
 
     case 'overpaint-shell': {
-      // Daten vom Server: alte Muschelposition + Farbe, neue Muschelposition + neue Farbe
       const [_, oldX, oldY, oldColor, newX, newY, newColor] = incoming;
-
-      // Übermalen der alten Muschel mit Sandfarbe
       ctx.fillStyle = sandColor;
       ctx.beginPath();
       ctx.arc(oldX + currentShellSize / 2, oldY + currentShellSize / 2, currentShellSize, 0, Math.PI * 2);
       ctx.fill();
 
-      // Punkte anpassen
       decrementShellCount(oldColor);
       incrementShellCount(newColor);
 
-      // Alte Muschel aus Array entfernen
       shells = shells.filter(s => !(s.x === oldX && s.y === oldY));
+      shells.push({ x: newX, y: newY, color: newColor });
 
-      // Neue Muschel hinzufügen
-      shells.push({x: newX, y: newY, color: newColor});
-
-      // Neue Muschel zeichnen
       ctx.fillStyle = newColor;
       ctx.beginPath();
       ctx.arc(newX + currentShellSize / 2, newY + currentShellSize / 2, currentShellSize / 2, 0, Math.PI * 2);
@@ -274,6 +238,18 @@ socket.addEventListener('message', (event) => {
 
       checkForWin(newColor);
       updateCounters();
+      break;
+    }
+
+    case 'game-over': {
+      const [_, winningColor] = incoming;
+      if (!gameOver) {
+        gameOver = true;
+        setTimeout(() => {
+          alert(`🎉 Team ${winningColor.toUpperCase()} hat mit ${SHELL_LIMIT} Muscheln gewonnen!\nDas Spiel startet jetzt neu...`);
+          location.reload();
+        }, 100);
+      }
       break;
     }
   }
