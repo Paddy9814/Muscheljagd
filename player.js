@@ -9,7 +9,6 @@ const colorSelectionContainer = document.getElementById('color-selection');
 const colors = ['pink', 'black', 'white', 'lightblue', 'darkblue'];
 const canvasWidth = canvas.width;
 const canvasHeight = canvas.height;
-const backgroundColor = '#faedcd';
 
 const webSocketServer = 'wss://nosch.uber.space/web-rooms/';
 const socket = new WebSocket(webSocketServer);
@@ -17,13 +16,11 @@ const socket = new WebSocket(webSocketServer);
 const SHELL_LIMIT = 100;
 let gameOver = false;
 
-let shellCount = 0;
 let shellCountsByColor = {};
 colors.forEach(color => {
   shellCountsByColor[color] = 0;
 });
 
-let clientId = null;
 let clientCount = 0;
 let playerColor = null;
 let assignedColors = new Set();
