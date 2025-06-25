@@ -102,7 +102,12 @@ function updateAssignedColors(arr) {
 
 function checkForWin(color) {
   if (shellCountsByColor[color] >= SHELL_LIMIT && !gameOver) {
+    gameOver = true;
+    alert(`🎉 Team ${color.toUpperCase()} hat mit ${SHELL_LIMIT} Muscheln gewonnen!\nDas Spiel startet jetzt neu...`);
     socket.send(JSON.stringify(['*broadcast-message*', ['game-over', color]]));
+    setTimeout(() => {
+      location.reload();
+    }, 200);
   }
 }
 
